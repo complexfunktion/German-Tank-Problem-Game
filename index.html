@@ -8,52 +8,49 @@
 body {
   font-family: sans-serif;
   text-align: center;
-  background: #f0f0f0;
-}
-
-h1 {
-  margin-top: 20px;
+  background: linear-gradient(#87ceeb, #e0e0e0);
 }
 
 #game {
   margin-top: 20px;
-  min-height: 100px;
+  min-height: 120px;
 }
 
 .tank {
   position: relative;
   display: inline-block;
-  margin: 10px;
-  padding: 15px;
-  background: #333;
-  color: white;
-  border-radius: 8px;
-  min-width: 60px;
+  margin: 15px;
   opacity: 0;
-  left: -100px;
-  animation: slide 0.5s forwards;
+  left: -120px;
+  animation: slide 0.6s forwards;
+}
+
+.tank img {
+  width: 100px;
+}
+
+.serial {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: white;
+  font-weight: bold;
+  text-shadow: 1px 1px 3px black;
 }
 
 @keyframes slide {
-  to {
-    opacity: 1;
-    left: 0;
-  }
-}
-
-input, button, select {
-  margin: 10px;
-  padding: 8px;
-  font-size: 16px;
-}
-
-#result {
-  margin-top: 20px;
+  to { opacity:1; left:0; }
 }
 
 #status {
   margin-top: 10px;
   font-weight: bold;
+}
+
+input, button, select {
+  margin: 10px;
+  padding: 8px;
 }
 </style>
 </head>
@@ -65,16 +62,16 @@ input, button, select {
 <div>
 難易度：
 <select id="difficulty">
-  <option value="easy">初級</option>
-  <option value="normal">中級</option>
-  <option value="hard">上級</option>
+  <option value="easy">初級（第2帝国）</option>
+  <option value="normal">中級（第3帝国）</option>
+  <option value="hard">上級（DDR）</option>
+  <option value="custom">カスタム（現代）</option>
 </select>
 </div>
 
 <button onclick="startGame()">ゲーム開始</button>
 
 <div id="status"></div>
-
 <div id="game"></div>
 
 <div>
@@ -91,12 +88,20 @@ let round = 1;
 let totalScore = 0;
 const maxRounds = 5;
 
-// 難易度
+// 難易度ごとの設定
 function getSettings() {
   const d = document.getElementById("difficulty").value;
-  if (d === "easy") return {minN:20, maxN:100, k:7};
-  if (d === "normal") return {minN:50, maxN:300, k:5};
-  return {minN:100, maxN:1000, k:3};
+
+  if (d === "easy") {
+    return {minN:20, maxN:100, k:7, img:"tank1.png", era:"ドイツ第2帝国"};
+  }
+  if (d === "normal") {
+    return {minN:50, maxN:300, k:5, img:"tank2.png", era:"ドイツ第3帝国"};
+  }
+  if (d === "hard") {
+    return {minN:100, maxN:1000, k:3, img:"tank3.png", era:"DDR"};
+  }
+  return {minN:50, maxN:500, k:4, img:"tank4.png", era:"現代ドイツ"};
 }
 
 // N生成
@@ -116,26 +121,35 @@ function generateSample(N, k) {
 
 // ラウンド開始
 function startRound() {
+  const s = getSettings();
+
   document.getElementById("result").textContent = "";
   document.getElementById("guess").value = "";
 
-  const s = getSettings();
   trueN = generateTrueN(s.minN, s.maxN);
   sample = generateSample(trueN, s.k);
 
   document.getElementById("status").textContent =
-    "ラウンド " + round + " / " + maxRounds;
+    s.era + " ｜ ラウンド " + round + "/" + maxRounds +
+    " ｜ スコア: " + totalScore;
 
   const gameDiv = document.getElementById("game");
   gameDiv.innerHTML = "";
 
-  // 時間差表示
   sample.forEach((n, i) => {
     setTimeout(() => {
       const div = document.createElement("div");
       div.className = "tank";
-      div.style.animationDelay = "0s";
-      div.textContent = "No." + n;
+
+      const img = document.createElement("img");
+      img.src = s.img;
+
+      const label = document.createElement("div");
+      label.className = "serial";
+      label.textContent = "No." + n;
+
+      div.appendChild(img);
+      div.appendChild(label);
       gameDiv.appendChild(div);
     }, i * 500);
   });
