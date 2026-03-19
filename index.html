@@ -21,7 +21,10 @@ body {
   display: inline-block;
   margin: 15px;
   opacity: 0;
-  left: -120px;
+
+  right: -120px;   /* 右側から出現 */
+  left: auto;
+
   animation: slide 0.6s forwards;
 }
 
@@ -40,7 +43,12 @@ body {
 }
 
 @keyframes slide {
-  to { opacity:1; left:0; }
+  from {
+    right: -120px;
+  }
+  to {
+    right: 0;
+  }
 }
 
 #status {
