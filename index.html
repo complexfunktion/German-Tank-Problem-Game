@@ -11,19 +11,31 @@ body {
   background: linear-gradient(#87ceeb, #e0e0e0);
 }
 
+/* 画面切替 */
+.screen {
+  display: none;
+}
+.active {
+  display: block;
+}
+
+button {
+  margin: 10px;
+  padding: 10px 20px;
+  font-size: 18px;
+}
+
+/* ゲーム */
 #game {
   margin-top: 20px;
   min-height: 120px;
 }
 
 .tank {
-  position: relative;
   display: inline-block;
   margin: 15px;
   opacity: 0;
-
-  transform: translateX(120px);  /* 右からスタート */
-
+  transform: translateX(120px);
   animation: slide 0.6s forwards;
 }
 
@@ -32,185 +44,233 @@ body {
 }
 
 .serial {
-  position: absolute;
-  bottom: 8px;
-  left: 50%;
-  transform: translateX(-50%);
+  position: relative;
+  top: -30px;
   color: white;
   font-weight: bold;
   text-shadow: 1px 1px 3px black;
 }
 
 @keyframes slide {
-  from {
-    opacity: 0;
-    transform: translateX(120px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-#status {
-  margin-top: 10px;
-  font-weight: bold;
-}
-
-input, button, select {
-  margin: 10px;
-  padding: 8px;
+  from { opacity:0; transform: translateX(120px);}
+  to { opacity:1; transform: translateX(0);}
 }
 </style>
 </head>
 
 <body>
 
-<h1>ドイツ戦車問題ゲーム</h1>
+<!-- ■ タイトル画面 -->
+<div id="titleScreen" class="screen active">
+  <h1>ドイツ戦車問題ゲーム</h1>
+  <button onclick="goToSelect()">START</button>
+  <button onclick="goToSettings()">SETTINGS</button>
+</div>
+<!--■ 設定画面-->
+<div id="settingsScreen" class="screen">
+  <h2>音楽設定</h2>
 
-<div>
-難易度：
-<select id="difficulty">
-  <option value="easy">初級（第2帝国）</option>
-  <option value="normal">中級（第3帝国）</option>
-  <option value="hard">上級（DDR）</option>
-  <option value="custom">カスタム（現代）</option>
-</select>
+  <label><input type="radio" name="bgm" value="off" checked> OFF</label><br>
+  <label><input type="radio" name="bgm" value="music1.mp3"> 曲1</label><br>
+  <label><input type="radio" name="bgm" value="music2.mp3"> 曲2</label><br>
+  <label><input type="radio" name="bgm" value="music3.mp3"> 曲3</label><br>
+
+  <button onclick="saveSettings()">保存</button>
+  <button onclick="backToTitle()">戻る</button>
+</div>
+<!-- ■ 難易度選択 -->
+<div id="selectScreen" class="screen">
+  <h2>難易度選択</h2>
+  <button onclick="startGame('easy')">初級（第2帝国）</button>
+  <button onclick="startGame('normal')">中級（第3帝国）</button>
+  <button onclick="startGame('hard')">上級（DDR）</button>
+  <button onclick="startGame('custom')">カスタム（現代）</button>
+
+  <div id="customSettings" style="display:none;">
+    <p>カスタム設定</p>
+    minN <input id="minN" type="number" value="50"><br>
+    maxN <input id="maxN" type="number" value="200"><br>
+    k <input id="k" type="number" value="5"><br>
+  </div>
+
+  <button onclick="backToTitle()">戻る</button>
 </div>
 
-<button onclick="startGame()">ゲーム開始</button>
+<!-- ■ ゲーム画面 -->
+<div id="gameScreen" class="screen">
+  <h2 id="status"></h2>
+  <div id="game"></div>
 
-<div id="status"></div>
-<div id="game"></div>
+  <div>
+    推定値 N：
+    <input type="number" id="guess">
+    <button id="actionBtn" onclick="submitAnswer()">決定</button>
+  </div>
 
-<div>
-推定値 N：
-<input type="number" id="guess">
-<button onclick="submitAnswer()">決定</button>
+  <div id="result"></div>
 </div>
-
-<div id="result"></div>
 
 <script>
 let trueN, sample;
-let round = 1;
-let totalScore = 0;
-const maxRounds = 5;
+let round, totalScore;
+let currentSettings;
+let bgm = null;
+let bgmSetting = "off";
 
-// 難易度ごとの設定
-function getSettings() {
-  const d = document.getElementById("difficulty").value;
-
-  if (d === "easy") {
-    return {minN:20, maxN:100, k:7, img:"tank1.png", era:"ドイツ第2帝国"};
-  }
-  if (d === "normal") {
-    return {minN:50, maxN:300, k:5, img:"tank2.png", era:"ドイツ第3帝国"};
-  }
-  if (d === "hard") {
-    return {minN:100, maxN:1000, k:3, img:"tank3.png", era:"DDR"};
-  }
-  return {minN:50, maxN:500, k:4, img:"tank4.png", era:"現代ドイツ"};
+// 画面切替
+function showScreen(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
 }
 
-// N生成
-function generateTrueN(min, max) {
-  return Math.floor(Math.random()*(max-min+1)) + min;
+function goToSelect(){
+  showScreen("selectScreen");
 }
 
-// サンプル生成
-function generateSample(N, k) {
-  const arr = Array.from({length:N}, (_,i)=>i+1);
-  for(let i=arr.length-1;i>0;i--){
-    const j=Math.floor(Math.random()*(i+1));
-    [arr[i],arr[j]]=[arr[j],arr[i]];
+function backToTitle(){
+  showScreen("titleScreen");
+}
+
+// 設定取得
+function getSettings(d){
+  if (d === "easy") return {minN:20,maxN:100,k:8,img:"tank1.png",era:"第2帝国"};
+  if (d === "normal") return {minN:50,maxN:300,k:5,img:"tank2.png",era:"第3帝国"};
+  if (d === "hard") return {minN:100,maxN:1000,k:3,img:"tank3.png",era:"DDR"};
+
+  // カスタム
+  document.getElementById("customSettings").style.display = "block";
+
+  const minN = parseInt(document.getElementById("minN").value);
+  const maxN = parseInt(document.getElementById("maxN").value);
+  const k = parseInt(document.getElementById("k").value);
+
+  if (k >= minN){
+    alert("k < minN にしてください");
+    return null;
   }
-  return arr.slice(0,k).sort((a,b)=>a-b);
+
+  return {minN,maxN,k,img:"tank4.png",era:"現代ドイツ"};
 }
 
-// ラウンド開始
-function startRound() {
-  const s = getSettings();
+// ゲーム開始
+function startGame(diff){
+  if (bgmSetting !== "off" && !bgm) {
+  bgm = new Audio(bgmSetting);
+  bgm.loop = true;
+  bgm.volume = 0.5;
+  bgm.play();
+  }
+  const s = getSettings(diff);
+  if (!s) return;
 
-  document.getElementById("result").textContent = "";
-  document.getElementById("guess").value = "";
+  currentSettings = s;
+  round = 1;
+  totalScore = 0;
 
-  trueN = generateTrueN(s.minN, s.maxN);
-  sample = generateSample(trueN, s.k);
+  showScreen("gameScreen");
+  startRound();
+}
+
+// ラウンド
+function startRound(){
+  document.getElementById("result").textContent="";
+  document.getElementById("guess").value="";
+
+  trueN = Math.floor(Math.random()*(currentSettings.maxN-currentSettings.minN+1)) + currentSettings.minN;
+
+  const arr = Array.from({length:trueN},(_,i)=>i+1);
+  arr.sort(()=>Math.random()-0.5);
+  sample = arr.slice(0,currentSettings.k).sort((a,b)=>a-b);
 
   document.getElementById("status").textContent =
-    s.era + " ｜ ラウンド " + round + "/" + maxRounds +
-    " ｜ スコア: " + totalScore;
+    "V.S."+currentSettings.era + " | ラウンド " + round + "/5 | スコア " + totalScore;
 
   const gameDiv = document.getElementById("game");
-  gameDiv.innerHTML = "";
+  gameDiv.innerHTML="";
 
-  sample.forEach((n, i) => {
-    setTimeout(() => {
-      const div = document.createElement("div");
-      div.className = "tank";
+  sample.forEach((n,i)=>{
+    setTimeout(()=>{
+      const div=document.createElement("div");
+      div.className="tank";
 
-      const img = document.createElement("img");
-      img.src = s.img;
+      const img=document.createElement("img");
+      img.src=currentSettings.img;
 
-      const label = document.createElement("div");
-      label.className = "serial";
-      label.textContent = "No." + n;
+      const label=document.createElement("div");
+      label.className="serial";
+      label.textContent="No."+n;
 
       div.appendChild(img);
       div.appendChild(label);
       gameDiv.appendChild(div);
-    }, i * 500);
+    },i*500);
   });
 }
 
-// ゲーム開始
-function startGame() {
-  round = 1;
-  totalScore = 0;
-  startRound();
-}
-
 // 推定
-function estimate(sample) {
-  const k = sample.length;
-  const m = Math.max(...sample);
-  return Math.round(m + m/k - 1);
-}
-
-// スコア
-function score(guess, trueN) {
-  const err = Math.abs(guess - trueN)/trueN;
-  if (err < 0.05) return 100;
-  if (err < 0.1) return 70;
-  if (err < 0.2) return 40;
-  return 10;
+function estimate(){
+  const k=sample.length;
+  const m=Math.max(...sample);
+  return Math.round(m + m/k -1);
 }
 
 // 回答
-function submitAnswer() {
-  const guess = parseInt(document.getElementById("guess").value);
-  if (!guess) return;
+function submitAnswer(){
+  const guess=parseInt(document.getElementById("guess").value);
+  if(!guess) return;
 
-  const est = estimate(sample);
-  const s = score(guess, trueN);
-  totalScore += s;
+  const est=estimate();
+  const err=Math.abs(guess-trueN)/trueN;
+  let s = err<0.05?100:err<0.1?70:err<0.2?40:10;
+  totalScore+=s;
 
   document.getElementById("result").innerHTML =
-    "正解: " + trueN + "<br>" +
-    "あなた: " + guess + "<br>" +
-    "最適推定: " + est + "<br>" +
-    "今回スコア: " + s;
+    "正解 "+trueN+"<br>あなた "+guess+"<br>最適 "+est+"<br>スコア "+s;
 
   round++;
 
-  if (round > maxRounds) {
+  if(round>5){
     document.getElementById("status").textContent =
-      "終了！合計スコア: " + totalScore;
+      "終了！合計スコア "+totalScore;
+
+    const btn=document.getElementById("actionBtn");
+    btn.textContent="スタートに戻る";
+    btn.onclick=backToTitle;
   } else {
-    setTimeout(startRound, 2000);
+    setTimeout(startRound,2000);
   }
 }
+function goToSettings(){
+  showScreen("settingsScreen");
+}
+
+function saveSettings(){
+  const selected = document.querySelector('input[name="bgm"]:checked').value;
+  bgmSetting = selected;
+
+  if (bgm) {
+    bgm.pause();
+    bgm = null;
+  }
+
+  if (bgmSetting !== "off") {
+    bgm = new Audio(bgmSetting);
+    bgm.loop = true;
+    bgm.volume = 0.5;
+    bgm.play();
+  }
+
+  localStorage.setItem("bgmSetting", bgmSetting);
+
+  backToTitle();
+}
+window.onload = function(){
+  const saved = localStorage.getItem("bgmSetting");
+  if (saved) {
+    bgmSetting = saved;
+    document.querySelector(`input[value="${saved}"]`).checked = true;
+  }
+};
 </script>
 
 </body>
