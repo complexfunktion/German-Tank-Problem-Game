@@ -84,14 +84,16 @@ button {
   <button onclick="startGame('easy')">初級（第2帝国）</button>
   <button onclick="startGame('normal')">中級（第3帝国）</button>
   <button onclick="startGame('hard')">上級（DDR）</button>
-  <button onclick="startGame('custom')">カスタム（現代）</button>
+  <button onclick="openCustom()">カスタム（現代）</button>
 
-  <div id="customSettings" style="display:none;">
-    <p>カスタム設定</p>
-    minN <input id="minN" type="number" value="50"><br>
-    maxN <input id="maxN" type="number" value="200"><br>
-    k <input id="k" type="number" value="5"><br>
-  </div>
+<div id="customSettings" style="display:none;">
+  <p>カスタム設定</p>
+  minN <input id="minN" type="number" value="50"><br>
+  maxN <input id="maxN" type="number" value="200"><br>
+  k <input id="k" type="number" value="5"><br>
+
+  <button onclick="startGame('custom')">これでプレイ</button>
+</div>
 
   <button onclick="backToTitle()">戻る</button>
 </div>
@@ -126,7 +128,9 @@ function showScreen(id){
 function goToSelect(){
   showScreen("selectScreen");
 }
-
+function openCustom(){
+  document.getElementById("customSettings").style.display = "block";
+}
 function backToTitle(){
   showScreen("titleScreen");
 }
@@ -139,17 +143,16 @@ function getSettings(d){
 
   // カスタム
   document.getElementById("customSettings").style.display = "block";
-
   const minN = parseInt(document.getElementById("minN").value);
   const maxN = parseInt(document.getElementById("maxN").value);
   const k = parseInt(document.getElementById("k").value);
 
   if (k >= minN){
-    alert("k < minN にしてください");
-    return null;
-  }
+  alert("k < minN にしてください");
+  return null;
+}
 
-  return {minN,maxN,k,img:"tank4.png",era:"現代ドイツ"};
+return {minN,maxN,k,img:"tank4.png",era:"現代ドイツ"};
 }
 
 // ゲーム開始
