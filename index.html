@@ -217,7 +217,7 @@ function getSettings(d){
 }
 
 return {minN,maxN,k,img:"tank4.png",era:"現代"};
-
+}
 /* 開始 */
 function startGame(diff){
   currentTheme = aiTheme[diff];
@@ -292,11 +292,16 @@ function submitAnswer(){
   const guessVal=parseInt(guess.value);
   if(!guessVal) return;
 
-  const err=Math.abs(guessVal-trueN)/trueN;
-  let s=err<0.05?100:err<0.1?70:err<0.2?40:10;
+  const err = Math.abs(guessVal - trueN) / trueN;
+  let s = Math.floor(100 * Math.pow(1 - err, 2));
+  s = Math.max(0, s);
   totalScore+=s;
 
-  result.innerHTML=`正解 ${trueN}<br>あなた ${guessVal}<br>スコア ${s}`;
+  result.innerHTML =
+  `正解 ${trueN}<br>
+   あなた ${guessVal}<br>
+   誤差 ${(err*100).toFixed(1)}%<br>
+   スコア ${s}`;
 
   /* 表情変化 */
   if(s<40) gameAi.src=`${currentTheme}_sad.png`;
