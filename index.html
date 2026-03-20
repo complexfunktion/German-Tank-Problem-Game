@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>German Tank Game</title>
+<title>German Tank Problem Game</title>
 
 <style>
 body {
@@ -256,8 +256,7 @@ function startRound(){
   const arr=Array.from({length:trueN},(_,i)=>i+1);
   arr.sort(()=>Math.random()-0.5);
   sample=arr.slice(0,currentSettings.k).sort((a,b)=>a-b);
-
-  status.textContent=`V.S.${currentSettings.era} | ラウンド ${round}/5 | スコア ${totalScore}`;
+  document.getElementById("status").textContent =`V.S.${currentSettings.era} | ラウンド ${round}/5 | スコア ${totalScore}`;
 
   game.innerHTML="";
 
@@ -311,7 +310,7 @@ function submitAnswer(){
   round++;
 
   if(round>5){
-    status.textContent=`終了！合計 ${totalScore}`;
+    document.getElementById("status").textContent =`終了！合計スコア ${totalScore}`;
     btn.textContent="戻る";
     btn.onclick=backToTitle;
   }else{
