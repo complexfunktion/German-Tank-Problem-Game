@@ -211,12 +211,30 @@ function getSettings(d){
   const maxN = parseInt(document.getElementById("maxN").value);
   const k = parseInt(document.getElementById("k").value);
 
-  if (k >= minN){
-  alert("k < minN にしてください");
-  return null;
-}
+  // 入力チェック
+  if (isNaN(minN) || isNaN(maxN) || isNaN(k)){
+    alert("すべての値を入力してください");
+    return null;
+  }
 
-return {minN,maxN,k,img:"tank4.png",era:"現代"};
+  if (minN <= 0 || maxN <= 0 || k <= 0){
+    alert("正の整数を入力してください");
+    return null;
+  }
+
+// ★追加（最重要）
+  if (minN > maxN){
+    alert("minN ≤ maxN にしてください");
+    return null;
+  }
+
+// 既存条件
+  if (k >= minN){
+    alert("k < minN にしてください");
+    return null;
+  }
+
+  return {minN,maxN,k,img:"tank4.png",era:"現代"};
 }
 /* 開始 */
 function startGame(diff){
