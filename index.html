@@ -12,12 +12,8 @@ body {
 }
 
 /* 画面切替 */
-.screen {
-  display: none;
-}
-.active {
-  display: block;
-}
+.screen { display: none; }
+.active { display: block; }
 
 button {
   margin: 10px;
@@ -25,11 +21,18 @@ button {
   font-size: 18px;
 }
 
-/* ゲーム */
-#game {
-  margin-top: 20px;
-  min-height: 120px;
+/* 難易度UI */
+.difficultyRow {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
 }
+
+.ai { width: 70px; }
+
+/* ゲーム */
+#game { margin-top: 20px; min-height: 120px; }
 
 .tank {
   display: inline-block;
@@ -39,9 +42,7 @@ button {
   animation: slide 0.6s forwards;
 }
 
-.tank img {
-  width: 100px;
-}
+.tank img { width: 100px; }
 
 .serial {
   position: relative;
@@ -60,17 +61,18 @@ button {
 
 <body>
 
-<!-- ■ タイトル画面 -->
+<!-- タイトル -->
 <div id="titleScreen" class="screen active">
   <h1>ドイツ戦車問題ゲーム</h1>
   <button onclick="goToSelect()">START</button>
   <button onclick="goToSettings()">SETTINGS</button>
 </div>
-<!--■ 設定画面-->
+
+<!-- 設定 -->
 <div id="settingsScreen" class="screen">
   <h2>音楽設定</h2>
 
-  <label><input type="radio" name="bgm" value="off" checked> OFF</label><br>
+  <label><input type="radio" name="bgm" value="off"> OFF</label><br>
   <label><input type="radio" name="bgm" value="music1.mp3"> 曲1</label><br>
   <label><input type="radio" name="bgm" value="music2.mp3"> 曲2</label><br>
   <label><input type="radio" name="bgm" value="music3.mp3"> 曲3</label><br>
@@ -78,29 +80,49 @@ button {
   <button onclick="saveSettings()">保存</button>
   <button onclick="backToTitle()">戻る</button>
 </div>
-<!-- ■ 難易度選択 -->
+
+<!-- 難易度 -->
 <div id="selectScreen" class="screen">
   <h2>難易度選択</h2>
-  <button onclick="startGame('easy')">初級（第2帝国）</button>
-  <button onclick="startGame('normal')">中級（第3帝国）</button>
-  <button onclick="startGame('hard')">上級（DDR）</button>
-  <button onclick="openCustom()">カスタム（現代）</button>
 
-<div id="customSettings" style="display:none;">
-  <p>カスタム設定</p>
-  minN <input id="minN" type="number" value="50"><br>
-  maxN <input id="maxN" type="number" value="200"><br>
-  k <input id="k" type="number" value="5"><br>
+  <div class="difficultyRow" onmouseover="hoverAi(this,'easy',true)" onmouseout="hoverAi(this,'easy',false)">
+    <button onclick="startGame('easy')">初級</button>
+    <img class="ai" src="easy_normal.png">
+  </div>
 
-  <button onclick="startGame('custom')">これでプレイ</button>
-</div>
+  <div class="difficultyRow" onmouseover="hoverAi(this,'normal',true)" onmouseout="hoverAi(this,'normal',false)">
+    <button onclick="startGame('normal')">中級</button>
+    <img class="ai" src="normal_normal.png">
+  </div>
+
+  <div class="difficultyRow" onmouseover="hoverAi(this,'hard',true)" onmouseout="hoverAi(this,'hard',false)">
+    <button onclick="startGame('hard')">上級</button>
+    <img class="ai" src="hard_normal.png">
+  </div>
+
+  <div class="difficultyRow" onmouseover="hoverAi(this,'custom',true)" onmouseout="hoverAi(this,'custom',false)">
+    <button onclick="openCustom()">カスタム</button>
+    <img class="ai" src="custom_normal.png">
+  </div>
+
+  <div id="customSettings" style="display:none;">
+    <p>カスタム設定</p>
+    minN <input id="minN" type="number" value="50"><br>
+    maxN <input id="maxN" type="number" value="200"><br>
+    k <input id="k" type="number" value="5"><br>
+    <button onclick="startGame('custom')">これでプレイ</button>
+  </div>
 
   <button onclick="backToTitle()">戻る</button>
 </div>
 
-<!-- ■ ゲーム画面 -->
+<!-- ゲーム -->
 <div id="gameScreen" class="screen">
   <h2 id="status"></h2>
+
+  <!-- アイ -->
+  <img id="gameAi" src="easy_normal.png" style="width:90px;">
+
   <div id="game"></div>
 
   <div>
@@ -116,10 +138,20 @@ button {
 let trueN, sample;
 let round, totalScore;
 let currentSettings;
+
 let bgm = null;
 let bgmSetting = "off";
 
-// 画面切替
+/* アイテーマ */
+const aiTheme = {
+  easy: "easy",
+  normal: "normal",
+  hard: "hard",
+  custom: "custom"
+};
+let currentTheme = "easy";
+
+/* 画面 */
 function showScreen(id){
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
@@ -127,69 +159,76 @@ function showScreen(id){
 
 function goToSelect(){
   showScreen("selectScreen");
+  document.getElementById("customSettings").style.display = "none";
 }
-function openCustom(){
-  document.getElementById("customSettings").style.display = "block";
-}
+
 function backToTitle(){
   showScreen("titleScreen");
 }
 
-// 設定取得
-function getSettings(d){
-  if (d === "easy") return {minN:20,maxN:100,k:8,img:"tank1.png",era:"第2帝国"};
-  if (d === "normal") return {minN:50,maxN:300,k:5,img:"tank2.png",era:"第3帝国"};
-  if (d === "hard") return {minN:100,maxN:1000,k:3,img:"tank3.png",era:"DDR"};
-
-  // カスタム
+function openCustom(){
   document.getElementById("customSettings").style.display = "block";
-  const minN = parseInt(document.getElementById("minN").value);
-  const maxN = parseInt(document.getElementById("maxN").value);
-  const k = parseInt(document.getElementById("k").value);
-
-  if (k >= minN){
-  alert("k < minN にしてください");
-  return null;
 }
 
-return {minN,maxN,k,img:"tank4.png",era:"現代ドイツ"};
+/* ホバー */
+function hoverAi(el,type,isHover){
+  const img = el.querySelector(".ai");
+  img.src = `${type}_${isHover ? "hover" : "normal"}.png`;
 }
 
-// ゲーム開始
+/* 設定 */
+function getSettings(d){
+  if (d==="easy") return {minN:20,maxN:100,k:8,img:"tank1.png",era:"第2帝国"};
+  if (d==="normal") return {minN:50,maxN:300,k:5,img:"tank2.png",era:"第3帝国"};
+  if (d==="hard") return {minN:100,maxN:1000,k:3,img:"tank3.png",era:"DDR"};
+
+  const minN = parseInt(minNInput.value);
+  const maxN = parseInt(maxNInput.value);
+  const k = parseInt(kInput.value);
+
+  if (k>=minN){ alert("k < minN"); return null; }
+
+  return {minN,maxN,k,img:"tank4.png",era:"現代"};
+}
+
+/* 開始 */
 function startGame(diff){
-  if (bgmSetting !== "off" && !bgm) {
-  bgm = new Audio(bgmSetting);
-  bgm.loop = true;
-  bgm.volume = 0.5;
-  bgm.play();
-  }
-  const s = getSettings(diff);
-  if (!s) return;
+  currentTheme = aiTheme[diff];
 
-  currentSettings = s;
-  round = 1;
-  totalScore = 0;
+  if (bgmSetting!=="off" && !bgm){
+    bgm=new Audio(bgmSetting);
+    bgm.loop=true;
+    bgm.play();
+  }
+
+  const s=getSettings(diff);
+  if(!s) return;
+
+  currentSettings=s;
+  round=1;
+  totalScore=0;
 
   showScreen("gameScreen");
   startRound();
 }
 
-// ラウンド
+/* ラウンド */
 function startRound(){
   document.getElementById("result").textContent="";
-  document.getElementById("guess").value="";
+  guess.value="";
 
-  trueN = Math.floor(Math.random()*(currentSettings.maxN-currentSettings.minN+1)) + currentSettings.minN;
+  /* 表情リセット */
+  gameAi.src = `${currentTheme}_normal.png`;
 
-  const arr = Array.from({length:trueN},(_,i)=>i+1);
+  trueN=Math.floor(Math.random()*(currentSettings.maxN-currentSettings.minN+1))+currentSettings.minN;
+
+  const arr=Array.from({length:trueN},(_,i)=>i+1);
   arr.sort(()=>Math.random()-0.5);
-  sample = arr.slice(0,currentSettings.k).sort((a,b)=>a-b);
+  sample=arr.slice(0,currentSettings.k).sort((a,b)=>a-b);
 
-  document.getElementById("status").textContent =
-    "V.S."+currentSettings.era + " | ラウンド " + round + "/5 | スコア " + totalScore;
+  status.textContent=`V.S.${currentSettings.era} | ラウンド ${round}/5 | スコア ${totalScore}`;
 
-  const gameDiv = document.getElementById("game");
-  gameDiv.innerHTML="";
+  game.innerHTML="";
 
   sample.forEach((n,i)=>{
     setTimeout(()=>{
@@ -205,73 +244,69 @@ function startRound(){
 
       div.appendChild(img);
       div.appendChild(label);
-      gameDiv.appendChild(div);
+      game.appendChild(div);
     },i*500);
   });
 }
 
-// 推定
+/* 推定 */
 function estimate(){
   const k=sample.length;
   const m=Math.max(...sample);
   return Math.round(m + m/k -1);
 }
 
-// 回答
+/* 回答 */
 function submitAnswer(){
-  const guess=parseInt(document.getElementById("guess").value);
-  if(!guess) return;
+  const guessVal=parseInt(guess.value);
+  if(!guessVal) return;
 
-  const est=estimate();
-  const err=Math.abs(guess-trueN)/trueN;
-  let s = err<0.05?100:err<0.1?70:err<0.2?40:10;
+  const err=Math.abs(guessVal-trueN)/trueN;
+  let s=err<0.05?100:err<0.1?70:err<0.2?40:10;
   totalScore+=s;
 
-  document.getElementById("result").innerHTML =
-    "正解 "+trueN+"<br>あなた "+guess+"<br>最適 "+est+"<br>スコア "+s;
+  result.innerHTML=`正解 ${trueN}<br>あなた ${guessVal}<br>スコア ${s}`;
+
+  /* 表情変化 */
+  if(s<40) gameAi.src=`${currentTheme}_sad.png`;
+  else if(s<70) gameAi.src=`${currentTheme}_normal.png`;
+  else gameAi.src=`${currentTheme}_happy.png`;
 
   round++;
 
   if(round>5){
-    document.getElementById("status").textContent =
-      "終了！合計スコア "+totalScore;
-
-    const btn=document.getElementById("actionBtn");
-    btn.textContent="スタートに戻る";
-    btn.onclick=backToTitle;
-  } else {
+    status.textContent=`終了！合計 ${totalScore}`;
+    actionBtn.textContent="戻る";
+    actionBtn.onclick=backToTitle;
+  }else{
     setTimeout(startRound,2000);
   }
 }
-function goToSettings(){
-  showScreen("settingsScreen");
-}
+
+/* BGM */
+function goToSettings(){ showScreen("settingsScreen"); }
 
 function saveSettings(){
-  const selected = document.querySelector('input[name="bgm"]:checked').value;
-  bgmSetting = selected;
+  const selected=document.querySelector('input[name="bgm"]:checked').value;
+  bgmSetting=selected;
 
-  if (bgm) {
-    bgm.pause();
-    bgm = null;
-  }
+  if(bgm){ bgm.pause(); bgm=null; }
 
-  if (bgmSetting !== "off") {
-    bgm = new Audio(bgmSetting);
-    bgm.loop = true;
-    bgm.volume = 0.5;
+  if(bgmSetting!=="off"){
+    bgm=new Audio(bgmSetting);
+    bgm.loop=true;
     bgm.play();
   }
 
-  localStorage.setItem("bgmSetting", bgmSetting);
-
+  localStorage.setItem("bgmSetting",bgmSetting);
   backToTitle();
 }
-window.onload = function(){
-  const saved = localStorage.getItem("bgmSetting");
-  if (saved) {
-    bgmSetting = saved;
-    document.querySelector(`input[value="${saved}"]`).checked = true;
+
+window.onload=function(){
+  const saved=localStorage.getItem("bgmSetting");
+  if(saved){
+    bgmSetting=saved;
+    document.querySelector(`input[value="${saved}"]`).checked=true;
   }
 };
 </script>
