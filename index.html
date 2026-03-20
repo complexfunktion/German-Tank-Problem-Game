@@ -206,14 +206,17 @@ function getSettings(d){
   if (d==="normal") return {minN:50,maxN:300,k:5,img:"tank2.png",era:"第3帝国"};
   if (d==="hard") return {minN:100,maxN:1000,k:3,img:"tank3.png",era:"DDR"};
 
-  const minN = parseInt(minNInput.value);
-  const maxN = parseInt(maxNInput.value);
-  const k = parseInt(kInput.value);
+  // カスタム
+  const minN = parseInt(document.getElementById("minN").value);
+  const maxN = parseInt(document.getElementById("maxN").value);
+  const k = parseInt(document.getElementById("k").value);
 
-  if (k>=minN){ alert("k < minN"); return null; }
-
-  return {minN,maxN,k,img:"tank4.png",era:"現代"};
+  if (k >= minN){
+  alert("k < minN にしてください");
+  return null;
 }
+
+return {minN,maxN,k,img:"tank4.png",era:"現代"};
 
 /* 開始 */
 function startGame(diff){
@@ -304,8 +307,8 @@ function submitAnswer(){
 
   if(round>5){
     status.textContent=`終了！合計 ${totalScore}`;
-    actionBtn.textContent="戻る";
-    actionBtn.onclick=backToTitle;
+    btn.textContent="戻る";
+    btn.onclick=backToTitle;
   }else{
     setTimeout(startRound,2000);
   }
