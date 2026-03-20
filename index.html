@@ -311,6 +311,7 @@ function submitAnswer(){
 
   if(round>5){
     document.getElementById("status").textContent =`終了！合計スコア ${totalScore}`;
+    const btn = document.getElementById("actionBtn");
     btn.textContent="戻る";
     btn.onclick=backToTitle;
   }else{
