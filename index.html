@@ -56,6 +56,30 @@ button {
   from { opacity:0; transform: translateX(120px);}
   to { opacity:1; transform: translateX(0);}
 }
+/* 難易度ボタン色 */
+.easyBtn {
+  background-color: white;
+  color: black;
+  border: 2px solid black;
+}
+
+.normalBtn {
+  background-color: black;
+  color: white;
+  border: 2px solid black;
+}
+
+.hardBtn {
+  background-color: red;
+  color: white;
+  border: 2px solid darkred;
+}
+
+.customBtn {
+  background-color: yellow;
+  color: black;
+  border: 2px solid goldenrod;
+}
 </style>
 </head>
 
@@ -86,22 +110,22 @@ button {
   <h2>難易度選択</h2>
 
   <div class="difficultyRow" onmouseover="hoverAi(this,'easy',true)" onmouseout="hoverAi(this,'easy',false)">
-    <button onclick="startGame('easy')">初級</button>
+    <button class="easyBtn" onclick="startGame('easy')">初級</button>
     <img class="ai" src="easy_normal.png">
   </div>
 
   <div class="difficultyRow" onmouseover="hoverAi(this,'normal',true)" onmouseout="hoverAi(this,'normal',false)">
-    <button onclick="startGame('normal')">中級</button>
+    <button class="normalBtn" onclick="startGame('normal')">中級</button>
     <img class="ai" src="normal_normal.png">
   </div>
 
   <div class="difficultyRow" onmouseover="hoverAi(this,'hard',true)" onmouseout="hoverAi(this,'hard',false)">
-    <button onclick="startGame('hard')">上級</button>
+    <button class="hardBtn" onclick="startGame('hard')">上級</button>
     <img class="ai" src="hard_normal.png">
   </div>
 
   <div class="difficultyRow" onmouseover="hoverAi(this,'custom',true)" onmouseout="hoverAi(this,'custom',false)">
-    <button onclick="openCustom()">カスタム</button>
+    <button class="customBtn" onclick="openCustom()">カスタム</button>
     <img class="ai" src="custom_normal.png">
   </div>
 
@@ -194,6 +218,10 @@ function getSettings(d){
 /* 開始 */
 function startGame(diff){
   currentTheme = aiTheme[diff];
+
+  const btn = document.getElementById("actionBtn");
+  btn.textContent = "決定";
+  btn.onclick = submitAnswer;
 
   if (bgmSetting!=="off" && !bgm){
     bgm=new Audio(bgmSetting);
