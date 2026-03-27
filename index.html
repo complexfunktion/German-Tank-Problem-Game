@@ -251,8 +251,19 @@ button:active { transform: translateY(1px); }
   text-align: right;
   line-height: 1.6;
 }
-/* AI画像はそのままキープ（非表示で機能維持） */
-.ai { width: 70px; display: none; }
+/* AI画像 — 難易度選択画面 */
+.ai {
+  width: 70px;
+  height: 70px;
+  object-fit: contain;
+  filter: sepia(0.3) contrast(1.05);
+  transition: transform 0.15s ease, filter 0.15s ease;
+  flex-shrink: 0;
+}
+.diff-row:hover .ai {
+  transform: scale(1.12);
+  filter: sepia(0) contrast(1.1) drop-shadow(0 0 6px var(--amber-dim));
+}
 
 /* ─── カスタム設定 ─── */
 #customSettings {
@@ -423,8 +434,24 @@ button:active { transform: translateY(1px); }
 .result-error   { color: var(--amber); }
 .result-score   { color: var(--amber); font-size: 1.1rem; }
 
-/* AI画像（ゲーム中）*/
-#gameAi { display: none; }
+/* AI画像 — ゲーム画面 */
+#gameAi {
+  display: block;
+  width: 90px;
+  height: 90px;
+  object-fit: contain;
+  margin: 0 auto 0.6rem;
+  filter: sepia(0.2) contrast(1.05);
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+#gameAi.mood-happy {
+  filter: sepia(0) contrast(1.1) drop-shadow(0 0 8px rgba(107,128,80,0.7));
+  transform: scale(1.08) rotate(-2deg);
+}
+#gameAi.mood-sad {
+  filter: sepia(0.6) contrast(0.9) brightness(0.85);
+  transform: scale(0.95) rotate(2deg);
+}
 
 /* ─── タイトル装飾 ─── */
 .iron-cross {
@@ -618,7 +645,7 @@ button:active { transform: translateY(1px); }
       <span class="status-seg"><span class="label">SCORE:</span><span class="value" id="score-display">0</span></span>
     </div>
 
-    <!-- AI画像（非表示・機能維持のみ） -->
+    <!-- AI キャラクター — 表情変化あり -->
     <img id="gameAi" src="easy_normal.png">
 
     <!-- 戦車一覧 -->
@@ -712,6 +739,7 @@ function startRound(){
   document.getElementById("guess").value = "";
 
   gameAi.src = `${currentTheme}_normal.png`;
+  gameAi.classList.remove("mood-happy","mood-sad");
 
   trueN = Math.floor(Math.random()*(currentSettings.maxN - currentSettings.minN + 1)) + currentSettings.minN;
   const arr = Array.from({length:trueN},(_,i)=>i+1);
@@ -768,10 +796,18 @@ function submitAnswer(){
     `<span class="result-error">誤差 : ${(err*100).toFixed(1)}%</span>&nbsp;&nbsp;` +
     `<span class="result-score">SCORE +${s}</span>`;
 
-  /* AI表情（機能維持） */
-  if(s<40) gameAi.src=`${currentTheme}_sad.png`;
-  else if(s<70) gameAi.src=`${currentTheme}_normal.png`;
-  else gameAi.src=`${currentTheme}_happy.png`;
+  /* AI表情変化 — src切替 + CSSクラスで視覚強調 */
+  const ai = document.getElementById("gameAi");
+  ai.classList.remove("mood-happy","mood-sad");
+  if(s<40){
+    ai.src=`${currentTheme}_sad.png`;
+    ai.classList.add("mood-sad");
+  } else if(s<70){
+    ai.src=`${currentTheme}_normal.png`;
+  } else {
+    ai.src=`${currentTheme}_happy.png`;
+    ai.classList.add("mood-happy");
+  }
 
   round++;
   document.getElementById("score-display").textContent = totalScore;
