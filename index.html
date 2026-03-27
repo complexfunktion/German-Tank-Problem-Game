@@ -2,372 +2,821 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>German Tank Problem Game</title>
-
+<title>German Tank Problem — 独戦車識別作戦</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=IM+Fell+English:ital@0;1&family=Share+Tech+Mono&display=swap');
+
+:root {
+  --khaki:       #c8b882;
+  --khaki-dark:  #8a7d55;
+  --rust:        #9b3a2a;
+  --rust-light:  #c04a37;
+  --ink:         #1a1710;
+  --paper:       #2b2719;
+  --paper-mid:   #332e1e;
+  --paper-light: #3e3826;
+  --amber:       #d4a843;
+  --amber-dim:   #8a6a22;
+  --cream:       #e8dfc0;
+  --cream-dim:   #a09070;
+  --green-dull:  #4a5a38;
+  --green-brt:   #6b8050;
+  --border:      rgba(200, 184, 130, 0.25);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
 body {
-  font-family: sans-serif;
+  font-family: 'Special Elite', cursive;
+  background-color: var(--ink);
+  color: var(--cream);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* ─── 背景テクスチャ ─── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    ),
+    radial-gradient(ellipse at 20% 20%, rgba(90,80,40,0.15) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 80%, rgba(60,40,20,0.2) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.6;
+}
+
+/* ─── 全スクリーン共通ラッパー ─── */
+.screen { display: none; position: relative; z-index: 1; }
+.screen.active { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem 1rem; }
+
+/* ─── デコラティブボーダー ─── */
+.panel {
+  background: var(--paper);
+  border: 1px solid var(--border);
+  position: relative;
+  padding: 2.5rem 3rem;
+  max-width: 680px;
+  width: 100%;
+}
+.panel::before, .panel::after {
+  content: '';
+  position: absolute;
+  border: 1px solid var(--amber-dim);
+  pointer-events: none;
+}
+.panel::before { inset: 6px; opacity: 0.4; }
+.panel::after  { inset: 10px; opacity: 0.15; }
+
+.corner {
+  position: absolute;
+  width: 18px; height: 18px;
+  border-color: var(--amber);
+  border-style: solid;
+  z-index: 2;
+}
+.corner.tl { top: 4px; left: 4px;  border-width: 2px 0 0 2px; }
+.corner.tr { top: 4px; right: 4px; border-width: 2px 2px 0 0; }
+.corner.bl { bottom: 4px; left: 4px;  border-width: 0 0 2px 2px; }
+.corner.br { bottom: 4px; right: 4px; border-width: 0 2px 2px 0; }
+
+/* ─── タイポグラフィ ─── */
+.typeface-mono { font-family: 'Share Tech Mono', monospace; }
+.typeface-serif { font-family: 'IM Fell English', serif; }
+
+.stamp {
+  font-family: 'Special Elite', cursive;
+  display: inline-block;
+  border: 3px solid var(--rust);
+  color: var(--rust);
+  padding: 2px 12px;
+  letter-spacing: 0.15em;
+  transform: rotate(-2deg);
+  font-size: 0.7rem;
+  opacity: 0.85;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+}
+
+h1.title-main {
+  font-family: 'IM Fell English', serif;
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  color: var(--khaki);
+  letter-spacing: 0.05em;
+  line-height: 1.2;
   text-align: center;
-  background: linear-gradient(#87ceeb, #e0e0e0);
+}
+h1.title-sub {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--amber-dim);
+  letter-spacing: 0.3em;
+  text-align: center;
+  margin-top: 0.3rem;
+}
+h2 {
+  font-family: 'IM Fell English', serif;
+  font-size: 1.4rem;
+  color: var(--khaki);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.5rem;
+  letter-spacing: 0.05em;
 }
 
-/* 画面切替 */
-.screen { display: none; }
-.active { display: block; }
-
-button {
-  margin: 10px;
-  padding: 10px 20px;
-  font-size: 18px;
-}
-
-/* 難易度UI */
-.difficultyRow {
+/* ─── 区切り線 ─── */
+.rule {
+  width: 100%;
   display: flex;
-  justify-content: center;
   align-items: center;
-  gap: 20px;
+  gap: 8px;
+  margin: 1.5rem 0;
+  color: var(--amber-dim);
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  font-family: 'Share Tech Mono', monospace;
+}
+.rule::before, .rule::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--amber-dim), transparent);
 }
 
-.ai { width: 70px; }
+/* ─── ボタン ─── */
+button {
+  font-family: 'Special Elite', cursive;
+  cursor: pointer;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition: all 0.15s ease;
+  position: relative;
+  overflow: hidden;
+}
+button::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0);
+  transition: background 0.15s;
+}
+button:hover::after { background: rgba(255,255,255,0.07); }
+button:active { transform: translateY(1px); }
 
-/* ゲーム */
-#game { margin-top: 20px; min-height: 120px; }
+.btn-primary {
+  background: var(--green-dull);
+  color: var(--cream);
+  border: 1px solid var(--green-brt);
+  padding: 0.7rem 2.2rem;
+  font-size: 1rem;
+  box-shadow: 0 2px 0 rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+.btn-primary:hover { background: var(--green-brt); }
+
+.btn-secondary {
+  background: transparent;
+  color: var(--cream-dim);
+  border: 1px solid var(--border);
+  padding: 0.55rem 1.6rem;
+  font-size: 0.85rem;
+}
+.btn-secondary:hover { border-color: var(--khaki-dark); color: var(--cream); }
+
+.btn-submit {
+  background: var(--amber-dim);
+  color: var(--ink);
+  border: 1px solid var(--amber);
+  padding: 0.6rem 1.8rem;
+  font-size: 0.95rem;
+  font-weight: bold;
+  box-shadow: 0 2px 0 rgba(0,0,0,0.5);
+}
+.btn-submit:hover { background: var(--amber); }
+
+.btn-row { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-top: 1.5rem; }
+
+/* ─── 難易度 ─── */
+.diff-grid { display: flex; flex-direction: column; gap: 0.8rem; }
+.diff-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--border);
+  background: var(--paper-mid);
+  transition: background 0.2s, border-color 0.2s;
+  cursor: pointer;
+}
+.diff-row:hover { background: var(--paper-light); border-color: var(--khaki-dark); }
+
+.diff-badge {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  padding: 2px 8px;
+  border: 1px solid;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.badge-easy   { border-color: var(--green-brt); color: var(--green-brt); }
+.badge-normal { border-color: var(--amber); color: var(--amber); }
+.badge-hard   { border-color: var(--rust-light); color: var(--rust-light); }
+.badge-custom { border-color: var(--cream-dim); color: var(--cream-dim); }
+
+.diff-label {
+  flex: 1;
+  font-size: 1rem;
+  color: var(--cream);
+}
+.diff-meta {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--cream-dim);
+  text-align: right;
+  line-height: 1.6;
+}
+/* AI画像はそのままキープ（非表示で機能維持） */
+.ai { width: 70px; display: none; }
+
+/* ─── カスタム設定 ─── */
+#customSettings {
+  display: none;
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  background: var(--paper-mid);
+  gap: 0.6rem;
+}
+.custom-field {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin: 0.4rem 0;
+}
+.custom-field label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--cream-dim);
+  letter-spacing: 0.1em;
+  width: 80px;
+  text-align: right;
+}
+.custom-field input {
+  background: var(--ink);
+  border: 1px solid var(--border);
+  color: var(--amber);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.9rem;
+  padding: 0.3rem 0.6rem;
+  width: 90px;
+}
+.custom-field input:focus { outline: none; border-color: var(--amber-dim); }
+
+/* ─── 設定画面 ─── */
+.bgm-options { display: flex; flex-direction: column; gap: 0.6rem; }
+.bgm-option {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.5rem 0.8rem;
+  border: 1px solid transparent;
+  transition: border-color 0.2s;
+}
+.bgm-option:hover { border-color: var(--border); }
+.bgm-option input[type="radio"] {
+  accent-color: var(--amber);
+  width: 14px; height: 14px;
+}
+.bgm-option span {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--cream-dim);
+  letter-spacing: 0.1em;
+}
+
+/* ─── ゲーム画面 ─── */
+#status-bar {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--amber-dim);
+  letter-spacing: 0.15em;
+  text-align: center;
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 0.5rem;
+}
+.status-seg {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+.status-seg .label { opacity: 0.6; }
+.status-seg .value { color: var(--amber); }
+
+/* 戦車表示エリア */
+#game {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.2rem;
+  min-height: 140px;
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,0.2);
+  position: relative;
+}
+#game::before {
+  content: 'FIELD OBSERVATION — SERIAL NUMBERS CAPTURED';
+  position: absolute;
+  top: 0.4rem; left: 50%; transform: translateX(-50%);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.5rem;
+  letter-spacing: 0.25em;
+  color: var(--cream-dim);
+  opacity: 0.5;
+  white-space: nowrap;
+}
 
 .tank {
-  display: inline-block;
-  margin: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   opacity: 0;
-  transform: translateX(120px);
-  animation: slide 0.6s forwards;
+  transform: translateX(40px);
+  animation: slide-in 0.5s ease forwards;
 }
-
-.tank img { width: 100px; }
-
+@keyframes slide-in {
+  from { opacity: 0; transform: translateX(40px) rotate(3deg); }
+  to   { opacity: 1; transform: translateX(0) rotate(0deg); }
+}
+.tank img { width: 80px; filter: sepia(0.8) contrast(1.1); }
 .serial {
-  position: relative;
-  top: -30px;
-  color: white;
-  font-weight: bold;
-  text-shadow: 1px 1px 3px black;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--amber);
+  letter-spacing: 0.12em;
+  margin-top: 0.3rem;
+  background: rgba(0,0,0,0.6);
+  padding: 1px 6px;
+  border: 1px solid rgba(212,168,67,0.3);
 }
 
-@keyframes slide {
-  from { opacity:0; transform: translateX(120px);}
-  to { opacity:1; transform: translateX(0);}
+/* 入力エリア */
+.guess-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 1rem;
 }
-/* 難易度ボタン色 */
-.easyBtn {
-  background-color: white;
-  color: black;
-  border: 2px solid black;
+.guess-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--cream-dim);
+  letter-spacing: 0.2em;
+}
+.guess-row { display: flex; gap: 0.8rem; align-items: center; }
+#guess {
+  background: var(--ink);
+  border: 1px solid var(--border);
+  border-bottom: 2px solid var(--amber-dim);
+  color: var(--amber);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 1.4rem;
+  padding: 0.5rem 0.8rem;
+  width: 130px;
+  text-align: center;
+  letter-spacing: 0.1em;
+}
+#guess:focus { outline: none; border-bottom-color: var(--amber); }
+
+/* 結果 */
+#result {
+  margin-top: 1rem;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.85rem;
+  line-height: 1.9;
+  text-align: center;
+  min-height: 2rem;
+}
+.result-correct { color: var(--green-brt); }
+.result-guess   { color: var(--cream); }
+.result-error   { color: var(--amber); }
+.result-score   { color: var(--amber); font-size: 1.1rem; }
+
+/* AI画像（ゲーム中）*/
+#gameAi { display: none; }
+
+/* ─── タイトル装飾 ─── */
+.iron-cross {
+  font-size: 2rem;
+  color: var(--amber-dim);
+  opacity: 0.6;
+  margin-bottom: 0.5rem;
+}
+.classified {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.35em;
+  color: var(--cream-dim);
+  opacity: 0.5;
+  margin-top: 1rem;
 }
 
-.normalBtn {
-  background-color: black;
-  color: white;
-  border: 2px solid black;
+/* ─── アニメーション：タイトルフェードイン ─── */
+.fade-up {
+  opacity: 0;
+  transform: translateY(16px);
+  animation: fade-up 0.7s ease forwards;
+}
+.fade-up:nth-child(1) { animation-delay: 0.1s; }
+.fade-up:nth-child(2) { animation-delay: 0.25s; }
+.fade-up:nth-child(3) { animation-delay: 0.4s; }
+.fade-up:nth-child(4) { animation-delay: 0.55s; }
+.fade-up:nth-child(5) { animation-delay: 0.7s; }
+@keyframes fade-up {
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.hardBtn {
-  background-color: red;
-  color: white;
-  border: 2px solid darkred;
+/* 点滅カーソル */
+.blink { animation: blink 1s step-end infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ─── スコアフィニッシュバー ─── */
+.final-score {
+  font-family: 'IM Fell English', serif;
+  font-size: 2.5rem;
+  color: var(--amber);
+  letter-spacing: 0.05em;
+  margin: 0.5rem 0;
+}
+.final-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.3em;
+  color: var(--cream-dim);
 }
 
-.customBtn {
-  background-color: yellow;
-  color: black;
-  border: 2px solid goldenrod;
+/* ─── レスポンシブ ─── */
+@media (max-width: 480px) {
+  .panel { padding: 1.8rem 1.4rem; }
+  #status-bar { flex-direction: column; gap: 0.3rem; align-items: flex-start; }
 }
 </style>
 </head>
-
 <body>
 
-<!-- タイトル -->
+<!-- ══════════════════ タイトル ══════════════════ -->
 <div id="titleScreen" class="screen active">
-  <h1>ドイツ戦車問題ゲーム</h1>
-  <button onclick="goToSelect()">START</button>
-  <button onclick="goToSettings()">SETTINGS</button>
+  <div class="panel">
+    <div class="corner tl"></div><div class="corner tr"></div>
+    <div class="corner bl"></div><div class="corner br"></div>
+
+    <div style="text-align:center;">
+      <div class="fade-up">
+        <div class="stamp">Geheime Kommandosache</div>
+      </div>
+      <div class="fade-up">
+        <div class="iron-cross">✠</div>
+        <h1 class="title-main">ドイツ戦車問題</h1>
+        <h1 class="title-sub">GERMAN TANK PROBLEM — STATISTICAL INFERENCE OPERATION</h1>
+      </div>
+
+      <div class="rule fade-up">MISSION BRIEFING</div>
+
+      <p class="fade-up" style="font-family:'Share Tech Mono',monospace;font-size:0.75rem;color:var(--cream-dim);line-height:1.9;letter-spacing:0.05em;text-align:left;margin-bottom:1.5rem;">
+        敵軍の捕獲した戦車のシリアルナンバーから、<br>
+        生産台数 <span style="color:var(--amber)">N</span> を推定せよ。<br>
+        統計的推測を駆使し、情報戦を制せ。
+      </p>
+
+      <div class="btn-row fade-up">
+        <button class="btn-primary" onclick="goToSelect()">▶ MISSION START</button>
+        <button class="btn-secondary" onclick="goToSettings()">⚙ SETTINGS</button>
+      </div>
+
+      <p class="classified fade-up">CLASSIFIED — INTELLIGENCE DIVISION — 1943</p>
+    </div>
+  </div>
 </div>
 
-<!-- 設定 -->
+<!-- ══════════════════ 設定 ══════════════════ -->
 <div id="settingsScreen" class="screen">
-  <h2>音楽設定</h2>
-
-  <label><input type="radio" name="bgm" value="off"> OFF</label><br>
-  <label><input type="radio" name="bgm" value="music1.mp3"> 曲1</label><br>
-  <label><input type="radio" name="bgm" value="music2.mp3"> 曲2</label><br>
-  <label><input type="radio" name="bgm" value="music3.mp3"> 曲3</label><br>
-
-  <button onclick="saveSettings()">保存</button>
-  <button onclick="backToTitle()">戻る</button>
+  <div class="panel">
+    <div class="corner tl"></div><div class="corner tr"></div>
+    <div class="corner bl"></div><div class="corner br"></div>
+    <h2>⚙ 音楽設定 — SIGNAL CONFIG</h2>
+    <div class="bgm-options">
+      <label class="bgm-option"><input type="radio" name="bgm" value="off"><span>[ OFF ] — 無線封鎖</span></label>
+      <label class="bgm-option"><input type="radio" name="bgm" value="music1.mp3"><span>[ BGM-1 ] — 曲1</span></label>
+      <label class="bgm-option"><input type="radio" name="bgm" value="music2.mp3"><span>[ BGM-2 ] — 曲2</span></label>
+      <label class="bgm-option"><input type="radio" name="bgm" value="music3.mp3"><span>[ BGM-3 ] — 曲3</span></label>
+    </div>
+    <div class="btn-row">
+      <button class="btn-primary" onclick="saveSettings()">保存</button>
+      <button class="btn-secondary" onclick="backToTitle()">← 戻る</button>
+    </div>
+  </div>
 </div>
 
-<!-- 難易度 -->
+<!-- ══════════════════ 難易度選択 ══════════════════ -->
 <div id="selectScreen" class="screen">
-  <h2>難易度選択</h2>
+  <div class="panel">
+    <div class="corner tl"></div><div class="corner tr"></div>
+    <div class="corner bl"></div><div class="corner br"></div>
+    <h2>✠ 作戦難易度 — DIFFICULTY</h2>
 
-  <div class="difficultyRow" onmouseover="hoverAi(this,'easy',true)" onmouseout="hoverAi(this,'easy',false)">
-    <button class="easyBtn" onclick="startGame('easy')">初級</button>
-    <img class="ai" src="easy_normal.png">
+    <div class="diff-grid">
+
+      <div class="diff-row" onmouseover="hoverAi(this,'easy',true)" onmouseout="hoverAi(this,'easy',false)" onclick="startGame('easy')">
+        <span class="diff-badge badge-easy">初級</span>
+        <span class="diff-label">LEICHT — 練習作戦</span>
+        <span class="diff-meta">N: 20〜100<br>k=8 観測</span>
+        <img class="ai" src="easy_normal.png">
+      </div>
+
+      <div class="diff-row" onmouseover="hoverAi(this,'normal',true)" onmouseout="hoverAi(this,'normal',false)" onclick="startGame('normal')">
+        <span class="diff-badge badge-normal">中級</span>
+        <span class="diff-label">NORMAL — 通常作戦</span>
+        <span class="diff-meta">N: 50〜300<br>k=5 観測</span>
+        <img class="ai" src="normal_normal.png">
+      </div>
+
+      <div class="diff-row" onmouseover="hoverAi(this,'hard',true)" onmouseout="hoverAi(this,'hard',false)" onclick="startGame('hard')">
+        <span class="diff-badge badge-hard">上級</span>
+        <span class="diff-label">SCHWER — 危険任務</span>
+        <span class="diff-meta">N: 100〜1000<br>k=3 観測</span>
+        <img class="ai" src="hard_normal.png">
+      </div>
+
+      <div class="diff-row" onmouseover="hoverAi(this,'custom',true)" onmouseout="hoverAi(this,'custom',false)" onclick="openCustom()">
+        <span class="diff-badge badge-custom">カスタム</span>
+        <span class="diff-label">BENUTZERDEFINIERT</span>
+        <span class="diff-meta">自由設定</span>
+        <img class="ai" src="custom_normal.png">
+      </div>
+
+    </div>
+
+    <div id="customSettings">
+      <div class="rule">パラメータ入力</div>
+      <div class="custom-field">
+        <label>minN</label>
+        <input id="minN" type="number" value="50">
+        <span style="font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:var(--cream-dim);">最小生産台数</span>
+      </div>
+      <div class="custom-field">
+        <label>maxN</label>
+        <input id="maxN" type="number" value="200">
+        <span style="font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:var(--cream-dim);">最大生産台数</span>
+      </div>
+      <div class="custom-field">
+        <label>k</label>
+        <input id="k" type="number" value="5">
+        <span style="font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:var(--cream-dim);">観測数</span>
+      </div>
+      <div style="text-align:center;margin-top:0.8rem;">
+        <button class="btn-primary" onclick="startGame('custom')">▶ この設定で出撃</button>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="backToTitle()">← 撤退</button>
+    </div>
   </div>
-
-  <div class="difficultyRow" onmouseover="hoverAi(this,'normal',true)" onmouseout="hoverAi(this,'normal',false)">
-    <button class="normalBtn" onclick="startGame('normal')">中級</button>
-    <img class="ai" src="normal_normal.png">
-  </div>
-
-  <div class="difficultyRow" onmouseover="hoverAi(this,'hard',true)" onmouseout="hoverAi(this,'hard',false)">
-    <button class="hardBtn" onclick="startGame('hard')">上級</button>
-    <img class="ai" src="hard_normal.png">
-  </div>
-
-  <div class="difficultyRow" onmouseover="hoverAi(this,'custom',true)" onmouseout="hoverAi(this,'custom',false)">
-    <button class="customBtn" onclick="openCustom()">カスタム</button>
-    <img class="ai" src="custom_normal.png">
-  </div>
-
-  <div id="customSettings" style="display:none;">
-    <p>カスタム設定</p>
-    minN <input id="minN" type="number" value="50"><br>
-    maxN <input id="maxN" type="number" value="200"><br>
-    k <input id="k" type="number" value="5"><br>
-    <button onclick="startGame('custom')">これでプレイ</button>
-  </div>
-
-  <button onclick="backToTitle()">戻る</button>
 </div>
 
-<!-- ゲーム -->
+<!-- ══════════════════ ゲーム ══════════════════ -->
 <div id="gameScreen" class="screen">
-  <h2 id="status"></h2>
+  <div class="panel" style="max-width:720px;">
+    <div class="corner tl"></div><div class="corner tr"></div>
+    <div class="corner bl"></div><div class="corner br"></div>
 
-  <!-- アイ -->
-  <img id="gameAi" src="easy_normal.png" style="width:90px;">
+    <!-- ステータスバー -->
+    <div id="status-bar">
+      <span class="status-seg"><span class="label">THEATER:</span><span class="value" id="era-display">—</span></span>
+      <span class="status-seg"><span class="label">ROUND:</span><span class="value" id="round-display">—</span></span>
+      <span class="status-seg"><span class="label">SCORE:</span><span class="value" id="score-display">0</span></span>
+    </div>
 
-  <div id="game"></div>
+    <!-- AI画像（非表示・機能維持のみ） -->
+    <img id="gameAi" src="easy_normal.png">
 
-  <div>
-    推定値 N：
-    <input type="number" id="guess">
-    <button id="actionBtn" onclick="submitAnswer()">決定</button>
+    <!-- 戦車一覧 -->
+    <div id="game"></div>
+
+    <!-- 推定入力 -->
+    <div class="guess-section">
+      <p class="guess-label">推定 N — ESTIMATED TOTAL PRODUCTION</p>
+      <div class="guess-row">
+        <input type="number" id="guess" placeholder="_ _ _">
+        <button id="actionBtn" class="btn-submit" onclick="submitAnswer()">決定 →</button>
+      </div>
+    </div>
+
+    <!-- 結果 -->
+    <div id="result"></div>
+
+    <!-- h2要素は非表示で機能保持 -->
+    <h2 id="status" style="display:none;"></h2>
   </div>
-
-  <div id="result"></div>
 </div>
 
 <script>
 let trueN, sample;
 let round, totalScore;
 let currentSettings;
-
 let bgm = null;
 let bgmSetting = "off";
 
-/* アイテーマ */
-const aiTheme = {
-  easy: "easy",
-  normal: "normal",
-  hard: "hard",
-  custom: "custom"
-};
+const aiTheme = { easy:"easy", normal:"normal", hard:"hard", custom:"custom" };
 let currentTheme = "easy";
 
-/* 画面 */
+/* ─── 画面切替 ─── */
 function showScreen(id){
-  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
 }
-
-function goToSelect(){
-  showScreen("selectScreen");
-  document.getElementById("customSettings").style.display = "none";
-}
-
-function backToTitle(){
-  showScreen("titleScreen");
-}
-
+function goToSelect(){ showScreen("selectScreen"); document.getElementById("customSettings").style.display="none"; }
+function backToTitle(){ showScreen("titleScreen"); }
 function openCustom(){
-  document.getElementById("customSettings").style.display = "block";
+  const cs = document.getElementById("customSettings");
+  cs.style.display = cs.style.display === "block" ? "none" : "block";
 }
 
-/* ホバー */
-function hoverAi(el,type,isHover){
+/* ─── ホバー（機能維持） ─── */
+function hoverAi(el, type, isHover){
   const img = el.querySelector(".ai");
   img.src = `${type}_${isHover ? "hover" : "normal"}.png`;
 }
 
-/* 設定 */
+/* ─── 設定 ─── */
 function getSettings(d){
-  if (d==="easy") return {minN:20,maxN:100,k:8,img:"tank1.png",era:"第2帝国"};
-  if (d==="normal") return {minN:50,maxN:300,k:5,img:"tank2.png",era:"第3帝国"};
-  if (d==="hard") return {minN:100,maxN:1000,k:3,img:"tank3.png",era:"DDR"};
-
-  // カスタム
-  const minN = parseInt(document.getElementById("minN").value);
-  const maxN = parseInt(document.getElementById("maxN").value);
-  const k = parseInt(document.getElementById("k").value);
-
-  // 入力チェック
-  if (isNaN(minN) || isNaN(maxN) || isNaN(k)){
-    alert("すべての値を入力してください");
-    return null;
-  }
-
-  if (minN <= 0 || maxN <= 0 || k <= 0){
-    alert("正の整数を入力してください");
-    return null;
-  }
-
-// ★追加（最重要）
-  if (minN > maxN){
-    alert("minN ≤ maxN にしてください");
-    return null;
-  }
-
-// 既存条件
-  if (k >= minN){
-    alert("k < minN にしてください");
-    return null;
-  }
-
+  if(d==="easy")   return {minN:20, maxN:100, k:8, img:"tank1.png", era:"第2帝国"};
+  if(d==="normal") return {minN:50, maxN:300, k:5, img:"tank2.png", era:"第3帝国"};
+  if(d==="hard")   return {minN:100,maxN:1000,k:3, img:"tank3.png", era:"DDR"};
+  const minN=parseInt(document.getElementById("minN").value);
+  const maxN=parseInt(document.getElementById("maxN").value);
+  const k   =parseInt(document.getElementById("k").value);
+  if(isNaN(minN)||isNaN(maxN)||isNaN(k)){alert("すべての値を入力してください");return null;}
+  if(minN<=0||maxN<=0||k<=0){alert("正の整数を入力してください");return null;}
+  if(minN>maxN){alert("minN ≤ maxN にしてください");return null;}
+  if(k>=minN){alert("k < minN にしてください");return null;}
   return {minN,maxN,k,img:"tank4.png",era:"現代"};
 }
-/* 開始 */
+
+/* ─── ゲーム開始 ─── */
 function startGame(diff){
   currentTheme = aiTheme[diff];
-
   const btn = document.getElementById("actionBtn");
-  btn.textContent = "決定";
+  btn.textContent = "決定 →";
   btn.onclick = submitAnswer;
 
-  if (bgmSetting!=="off" && !bgm){
-    bgm=new Audio(bgmSetting);
-    bgm.loop=true;
+  if(bgmSetting!=="off" && !bgm){
+    bgm = new Audio(bgmSetting);
+    bgm.loop = true;
     bgm.play();
   }
 
-  const s=getSettings(diff);
+  const s = getSettings(diff);
   if(!s) return;
-
-  currentSettings=s;
-  round=1;
-  totalScore=0;
-
+  currentSettings = s;
+  round = 1;
+  totalScore = 0;
   showScreen("gameScreen");
   startRound();
 }
 
-/* ラウンド */
+/* ─── ラウンド ─── */
 function startRound(){
-  document.getElementById("result").textContent="";
-  guess.value="";
+  document.getElementById("result").textContent = "";
+  document.getElementById("guess").value = "";
 
-  /* 表情リセット */
   gameAi.src = `${currentTheme}_normal.png`;
 
-  trueN=Math.floor(Math.random()*(currentSettings.maxN-currentSettings.minN+1))+currentSettings.minN;
-
-  const arr=Array.from({length:trueN},(_,i)=>i+1);
+  trueN = Math.floor(Math.random()*(currentSettings.maxN - currentSettings.minN + 1)) + currentSettings.minN;
+  const arr = Array.from({length:trueN},(_,i)=>i+1);
   arr.sort(()=>Math.random()-0.5);
-  sample=arr.slice(0,currentSettings.k).sort((a,b)=>a-b);
-  document.getElementById("status").textContent =`V.S.${currentSettings.era} | ラウンド ${round}/5 | スコア ${totalScore}`;
+  sample = arr.slice(0,currentSettings.k).sort((a,b)=>a-b);
 
-  game.innerHTML="";
+  /* ステータスバー更新 */
+  document.getElementById("era-display").textContent   = currentSettings.era;
+  document.getElementById("round-display").textContent = `${round} / 5`;
+  document.getElementById("score-display").textContent = totalScore;
+  document.getElementById("status").textContent =
+    `V.S.${currentSettings.era} | ラウンド ${round}/5 | スコア ${totalScore}`;
 
+  const game = document.getElementById("game");
+  game.innerHTML = "";
   sample.forEach((n,i)=>{
     setTimeout(()=>{
-      const div=document.createElement("div");
-      div.className="tank";
-
-      const img=document.createElement("img");
-      img.src=currentSettings.img;
-
-      const label=document.createElement("div");
-      label.className="serial";
-      label.textContent="No."+n;
-
+      const div = document.createElement("div");
+      div.className = "tank";
+      div.style.animationDelay = "0s";
+      const img = document.createElement("img");
+      img.src = currentSettings.img;
+      const label = document.createElement("div");
+      label.className = "serial";
+      label.textContent = "No." + n;
       div.appendChild(img);
       div.appendChild(label);
       game.appendChild(div);
-    },i*500);
+    }, i*500);
   });
 }
 
-/* 推定 */
+/* ─── 推定 ─── */
 function estimate(){
-  const k=sample.length;
-  const m=Math.max(...sample);
-  return Math.round(m + m/k -1);
+  const k = sample.length;
+  const m = Math.max(...sample);
+  return Math.round(m + m/k - 1);
 }
 
-/* 回答 */
+/* ─── 回答 ─── */
 function submitAnswer(){
-  const guessVal=parseInt(guess.value);
+  const guessVal = parseInt(document.getElementById("guess").value);
   if(!guessVal) return;
 
-  let err = Math.min(
-  Math.abs(guessVal - trueN) / trueN,
-  1
-  );
-
+  let err = Math.min(Math.abs(guessVal - trueN) / trueN, 1);
   let s = Math.floor(100 * Math.pow(1 - err, 2));
   s = Math.max(0, s);
-  totalScore+=s;
+  totalScore += s;
 
-  result.innerHTML =
-  `正解 ${trueN}<br>
-   あなた ${guessVal}<br>
-   誤差 ${(err*100).toFixed(1)}%<br>
-   スコア ${s}`;
+  const resultDiv = document.getElementById("result");
+  resultDiv.innerHTML =
+    `<span class="result-correct">正解 : ${trueN}</span>&nbsp;&nbsp;` +
+    `<span class="result-guess">推定 : ${guessVal}</span>&nbsp;&nbsp;` +
+    `<span class="result-error">誤差 : ${(err*100).toFixed(1)}%</span>&nbsp;&nbsp;` +
+    `<span class="result-score">SCORE +${s}</span>`;
 
-  /* 表情変化 */
+  /* AI表情（機能維持） */
   if(s<40) gameAi.src=`${currentTheme}_sad.png`;
   else if(s<70) gameAi.src=`${currentTheme}_normal.png`;
   else gameAi.src=`${currentTheme}_happy.png`;
 
   round++;
+  document.getElementById("score-display").textContent = totalScore;
 
   if(round>5){
-    document.getElementById("status").textContent =`終了！合計スコア ${totalScore}`;
+    document.getElementById("status").textContent = `終了！合計スコア ${totalScore}`;
+    document.getElementById("era-display").textContent   = "MISSION END";
+    document.getElementById("round-display").textContent = "COMPLETE";
+    document.getElementById("score-display").textContent = totalScore;
+
+    resultDiv.innerHTML +=
+      `<br><br><span class="final-label">TOTAL SCORE</span><br>` +
+      `<span class="final-score">${totalScore}</span>`;
+
     const btn = document.getElementById("actionBtn");
-    btn.textContent="戻る";
-    btn.onclick=backToTitle;
-  }else{
-    setTimeout(startRound,2000);
+    btn.textContent = "← 帰還";
+    btn.onclick = backToTitle;
+  } else {
+    setTimeout(startRound, 2000);
   }
 }
 
-/* BGM */
+/* ─── BGM ─── */
 function goToSettings(){ showScreen("settingsScreen"); }
-
 function saveSettings(){
-  const selected=document.querySelector('input[name="bgm"]:checked').value;
-  bgmSetting=selected;
-
-  if(bgm){ bgm.pause(); bgm=null; }
-
+  const selected = document.querySelector('input[name="bgm"]:checked').value;
+  bgmSetting = selected;
+  if(bgm){ bgm.pause(); bgm = null; }
   if(bgmSetting!=="off"){
-    bgm=new Audio(bgmSetting);
-    bgm.loop=true;
+    bgm = new Audio(bgmSetting);
+    bgm.loop = true;
     bgm.play();
   }
-
-  localStorage.setItem("bgmSetting",bgmSetting);
+  localStorage.setItem("bgmSetting", bgmSetting);
   backToTitle();
 }
 
-window.onload=function(){
-  const saved=localStorage.getItem("bgmSetting");
+window.onload = function(){
+  const saved = localStorage.getItem("bgmSetting");
   if(saved){
-    bgmSetting=saved;
-    document.querySelector(`input[value="${saved}"]`).checked=true;
+    bgmSetting = saved;
+    const el = document.querySelector(`input[value="${saved}"]`);
+    if(el) el.checked = true;
   }
 };
 </script>
-
 </body>
 </html>
