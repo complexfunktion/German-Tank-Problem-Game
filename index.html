@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>German Tank Problem — 独戦車識別作戦</title>
+<title>German Tank Problem — ドイツ戦車問題</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=IM+Fell+English:ital@0;1&family=Share+Tech+Mono&display=swap');
 
@@ -525,15 +525,15 @@ button:active { transform: translateY(1px); }
       <div class="fade-up">
         <div class="iron-cross">✠</div>
         <h1 class="title-main">ドイツ戦車問題</h1>
-        <h1 class="title-sub">GERMAN TANK PROBLEM — STATISTICAL INFERENCE OPERATION</h1>
+        <h1 class="title-sub">GERMAN TANK PROBLEM - STATISTICAL INFERENCE OPERATION</h1>
       </div>
 
       <div class="rule fade-up">MISSION BRIEFING</div>
 
       <p class="fade-up" style="font-family:'Share Tech Mono',monospace;font-size:0.75rem;color:var(--cream-dim);line-height:1.9;letter-spacing:0.05em;text-align:left;margin-bottom:1.5rem;">
-        敵軍の捕獲した戦車のシリアルナンバーから、<br>
+        敵軍の捕獲した戦車のシリアルナンバーから,<br>
         生産台数 <span style="color:var(--amber)">N</span> を推定せよ。<br>
-        統計的推測を駆使し、情報戦を制せ。
+        統計的推測を駆使し,情報戦を制せ。
       </p>
 
       <div class="btn-row fade-up">
@@ -551,12 +551,12 @@ button:active { transform: translateY(1px); }
   <div class="panel">
     <div class="corner tl"></div><div class="corner tr"></div>
     <div class="corner bl"></div><div class="corner br"></div>
-    <h2>⚙ 音楽設定 — SIGNAL CONFIG</h2>
+    <h2>⚙ 音楽設定 - SIGNAL CONFIG</h2>
     <div class="bgm-options">
-      <label class="bgm-option"><input type="radio" name="bgm" value="off"><span>[ OFF ] — 無線封鎖</span></label>
-      <label class="bgm-option"><input type="radio" name="bgm" value="music1.mp3"><span>[ BGM-1 ] — 曲1</span></label>
-      <label class="bgm-option"><input type="radio" name="bgm" value="music2.mp3"><span>[ BGM-2 ] — 曲2</span></label>
-      <label class="bgm-option"><input type="radio" name="bgm" value="music3.mp3"><span>[ BGM-3 ] — 曲3</span></label>
+      <label class="bgm-option"><input type="radio" name="bgm" value="off"><span>[ OFF ] - 無線封鎖</span></label>
+      <label class="bgm-option"><input type="radio" name="bgm" value="music1.mp3"><span>[ BGM-1 ] - 曲1</span></label>
+      <label class="bgm-option"><input type="radio" name="bgm" value="music2.mp3"><span>[ BGM-2 ] - 曲2</span></label>
+      <label class="bgm-option"><input type="radio" name="bgm" value="music3.mp3"><span>[ BGM-3 ] - 曲3</span></label>
     </div>
     <div class="btn-row">
       <button class="btn-primary" onclick="saveSettings()">保存</button>
@@ -576,28 +576,28 @@ button:active { transform: translateY(1px); }
 
       <div class="diff-row" onmouseover="hoverAi(this,'easy',true)" onmouseout="hoverAi(this,'easy',false)" onclick="startGame('easy')">
         <span class="diff-badge badge-easy">初級</span>
-        <span class="diff-label">LEICHT — 練習作戦</span>
+        <span class="diff-label">LEICHT - 1915</span>
         <span class="diff-meta">N: 20〜100<br>k=8 観測</span>
         <img class="ai" src="easy_normal.png">
       </div>
 
       <div class="diff-row" onmouseover="hoverAi(this,'normal',true)" onmouseout="hoverAi(this,'normal',false)" onclick="startGame('normal')">
         <span class="diff-badge badge-normal">中級</span>
-        <span class="diff-label">NORMAL — 通常作戦</span>
+        <span class="diff-label">NORMAL - 1940</span>
         <span class="diff-meta">N: 50〜300<br>k=5 観測</span>
         <img class="ai" src="normal_normal.png">
       </div>
 
       <div class="diff-row" onmouseover="hoverAi(this,'hard',true)" onmouseout="hoverAi(this,'hard',false)" onclick="startGame('hard')">
         <span class="diff-badge badge-hard">上級</span>
-        <span class="diff-label">SCHWER — 危険任務</span>
+        <span class="diff-label">SCHWER - 1980</span>
         <span class="diff-meta">N: 100〜1000<br>k=3 観測</span>
         <img class="ai" src="hard_normal.png">
       </div>
 
       <div class="diff-row" onmouseover="hoverAi(this,'custom',true)" onmouseout="hoverAi(this,'custom',false)" onclick="openCustom()">
         <span class="diff-badge badge-custom">カスタム</span>
-        <span class="diff-label">BENUTZERDEFINIERT</span>
+        <span class="diff-label">BENUTZERDEFINIERT- 2000</span>
         <span class="diff-meta">自由設定</span>
         <img class="ai" src="custom_normal.png">
       </div>
@@ -813,7 +813,7 @@ function submitAnswer(){
   document.getElementById("score-display").textContent = totalScore;
 
   if(round>5){
-    document.getElementById("status").textContent = `終了！合計スコア ${totalScore}`;
+    document.getElementById("status").textContent = `終了!合計スコア ${totalScore}`;
     document.getElementById("era-display").textContent   = "MISSION END";
     document.getElementById("round-display").textContent = "COMPLETE";
     document.getElementById("score-display").textContent = totalScore;
